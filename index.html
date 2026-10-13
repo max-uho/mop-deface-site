@@ -15,15 +15,15 @@ a:focus-visible{outline:2px solid #fff;outline-offset:4px}#download-hint:empty{d
 <header><strong>MOP / DEFACE</strong><a href="https://github.com/max-uho/mop-deface" target="_blank" rel="noopener noreferrer">GitHub ↗</a></header>
 <section class="hero"><h1>Deface.</h1><p class="tagline">Blur faces in videos. On your computer. Offline.</p>
 <div class="downloads" id="downloads" role="group" aria-label="Download installers">
-<a class="download" data-platform="mac" data-arch="arm64" data-asset="aarch64-apple-darwin-signed.dmg" href="https://github.com/max-uho/mop-deface/releases/download/v0.1.8/Deface-0.1.8-aarch64-apple-darwin-signed.dmg">macOS · Apple Silicon ↓</a>
-<a class="download" data-platform="mac" data-arch="x64" data-asset="x86_64-apple-darwin-signed.dmg" href="https://github.com/max-uho/mop-deface/releases/download/v0.1.8/Deface-0.1.8-x86_64-apple-darwin-signed.dmg">macOS · Intel ↓</a>
-<a class="download" data-platform="windows" data-asset="x86_64-pc-windows-msvc-unsigned.exe" href="https://github.com/max-uho/mop-deface/releases/download/v0.1.8/Deface-0.1.8-x86_64-pc-windows-msvc-unsigned.exe">Windows ↓</a>
-<a class="download" data-platform="linux" data-asset="x86_64-unknown-linux-gnu-unsigned.AppImage" href="https://github.com/max-uho/mop-deface/releases/download/v0.1.8/Deface-0.1.8-x86_64-unknown-linux-gnu-unsigned.AppImage">Linux · AppImage ↓</a>
-<a class="download" data-platform="linux" data-asset="x86_64-unknown-linux-gnu-unsigned.deb" href="https://github.com/max-uho/mop-deface/releases/download/v0.1.8/Deface-0.1.8-x86_64-unknown-linux-gnu-unsigned.deb">Linux · Debian ↓</a>
-</div><p class="small">Free · <span id="version">v0.1.8</span> · No accounts, uploads, or telemetry</p><p class="small" id="download-hint" aria-live="polite"></p></section>
+<a class="download" data-platform="mac" data-arch="arm64" data-asset="aarch64-apple-darwin-signed.dmg" href="https://github.com/max-uho/mop-deface/releases/latest">macOS · Apple Silicon ↓</a>
+<a class="download" data-platform="mac" data-arch="x64" data-asset="x86_64-apple-darwin-signed.dmg" href="https://github.com/max-uho/mop-deface/releases/latest">macOS · Intel ↓</a>
+<a class="download" data-platform="windows" data-asset="x86_64-pc-windows-msvc-unsigned.exe" href="https://github.com/max-uho/mop-deface/releases/latest">Windows ↓</a>
+<a class="download" data-platform="linux" data-asset="x86_64-unknown-linux-gnu-unsigned.AppImage" href="https://github.com/max-uho/mop-deface/releases/latest">Linux · AppImage ↓</a>
+<a class="download" data-platform="linux" data-asset="x86_64-unknown-linux-gnu-unsigned.deb" href="https://github.com/max-uho/mop-deface/releases/latest">Linux · Debian ↓</a>
+</div><p class="small">Free · <span id="version">Latest release</span> · No accounts, uploads, or telemetry</p><p class="small" id="download-hint" aria-live="polite"></p></section>
 <div class="preview"><img src="https://github.com/user-attachments/assets/36061871-199b-4e4b-b606-5b9e37ae71d2" width="872" height="759" alt="Deface desktop app showing the video anonymization interface"></div>
 <p class="below">Drop a video, let Deface blur detected faces, review the result, and save an MP4. <strong style="color:#d3d3d3;font-weight:550">Face detection can miss people — always check the full video before sharing.</strong></p>
-<footer><span>Made with <a href="https://github.com/ORB-HD/deface">deface</a> · Processing stays on your device</span><a id="release-notes" href="https://github.com/max-uho/mop-deface/releases/tag/v0.1.8">Release notes ↗</a></footer>
+<footer><span>Made with <a href="https://github.com/ORB-HD/deface">deface</a> · Processing stays on your device</span><a id="release-notes" href="https://github.com/max-uho/mop-deface/releases/latest">Release notes ↗</a></footer>
 </main>
 <script>
 (async () => {
@@ -60,17 +60,24 @@ a:focus-visible{outline:2px solid #fff;outline-offset:4px}#download-hint:empty{d
     const release = await response.json();
     if (!Array.isArray(release.assets) || typeof release.tag_name !== 'string') throw new Error('Invalid release');
     const releaseBase = 'https://github.com/max-uho/mop-deface/releases/';
-    const updates = buttons.map(button => {
-      const asset = release.assets.find(asset => typeof asset.name === 'string' && asset.name.endsWith('-' + button.dataset.asset));
-      if (!asset || !asset.browser_download_url?.startsWith(releaseBase + 'download/')) throw new Error('Installer missing');
-      return [button, asset.browser_download_url];
+    let missing = false;
+    buttons.forEach(button => {
+      // Match platform and format without depending on the version or signing label.
+      const suffix = button.dataset.asset.replace(/-(?:signed|unsigned)(?=\.)/, '');
+      const asset = release.assets.find(asset => typeof asset.name === 'string' &&
+        asset.name.replace(/-(?:signed|unsigned)(?=\.)/, '').endsWith('-' + suffix));
+      if (typeof asset?.browser_download_url === 'string' && asset.browser_download_url.startsWith(releaseBase + 'download/')) {
+        button.href = asset.browser_download_url;
+      } else {
+        missing = true;
+        button.title = 'View available downloads in the latest release';
+      }
     });
-    // Apply a complete release together; otherwise retain all verified static fallback links.
-    updates.forEach(([button, url]) => { button.href = url; });
+    if (missing) hint.textContent += `${hint.textContent ? ' ' : ''}Some installers are unavailable; those links open the latest release.`;
     document.getElementById('version').textContent = release.tag_name;
     if (release.html_url?.startsWith(releaseBase + 'tag/')) document.getElementById('release-notes').href = release.html_url;
   } catch {
-    hint.textContent += `${hint.textContent ? ' ' : ''}Latest release could not be checked; downloads use verified v0.1.8 installers.`;
+    hint.textContent += `${hint.textContent ? ' ' : ''}Direct downloads could not be checked; choose your installer on the latest release page.`;
   } finally {
     clearTimeout(timeout);
   }
